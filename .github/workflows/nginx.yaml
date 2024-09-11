@@ -55,24 +55,22 @@ jobs:
         git config user.email "actions@github.com"
       working-directory: ${{ github.workspace }}/k8s-manifests
       
-    # 이미지 URI를 변경
-    - name: Update web-deployment.yaml with new image URI and tag
+    # Kustomize를 이용하여 kustomization.yaml 이미지 URI를 변경
+    - name: Update kustomization.yaml with new image tag
       run: |
-        sed -i "s|image: .*|image: $IMAGE_URI|" ./base/web-deployment.yaml
-        cat ./base/web-deployment.yaml # For debugging purposes
-      working-directory: ${{ github.workspace }}/k8s-manifests
-      env:
-        IMAGE_URI: ${{ env.IMAGE_URI }}
+        cd ${{ github.workspace }}/k8s-manifests/base
+        kustomize edit set image 4e06a9e9-kr1-registry.container.nhncloud.com/ncr-for-web/nginx:${{ env.IMAGE_TAG }}
+        cat kustomization.yaml # For debugging purposes
 
-    # 변경된 web-deployment.yaml 를 커밋 후 푸시
-    - name: Commit and push the updated web-deployment.yaml
+    # 변경된 kustomization.yaml 를 커밋 후 푸시
+    - name: Commit and push the updated kustomization.yaml
       run: |
-        git add base/web-deployment.yaml
-        git commit -m "Update image URI for websoul-test to $IMAGE_URI"
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git add kustomization.yaml
+        git commit -m "Update image tag to ${{ env.IMAGE_TAG }}"
         git push
       working-directory: ${{ github.workspace }}/k8s-manifests
-      env:
-        IMAGE_URI: ${{ env.IMAGE_URI }}
         
     # ArgoCD CLI 설치 - argocd 명령어를 사용하기 위함
     - name: Install ArgoCD CLI
