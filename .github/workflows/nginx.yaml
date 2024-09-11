@@ -18,24 +18,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    # Set up Docker Buildx
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-
     # Login to NHN Cloud NCR
     - name: Login to NHN Cloud NCR
       run: |
         echo "${{ secrets.NHN_NCR_PASSWORD }}" | docker login -u "${{ secrets.NHN_NCR_USERNAME }}" --password-stdin ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}
-
-    # Build and push Nginx Docker image
-    - name: Build and Push Nginx Docker Image
-      run: |
-        TAG_NAME=$(date +'%Y%m%d%H%M%S')
-        IMAGE_URI=${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}/${{ env.IMAGE_NAME }}:$TAG_NAME
-        docker build -t $IMAGE_URI .
-        docker push $IMAGE_URI
-        echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
-      working-directory: ./web
 
     # Setup Kustomize
     - name: Setup Kustomize
@@ -60,6 +46,8 @@ jobs:
     # Update Kubernetes manifest with new image URI
     - name: Update web-deployment.yaml with new image URI and tag
       run: |
+        TAG_NAME=$(date +'%Y%m%d%H%M%S')
+        IMAGE_URI=${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}/${{ env.IMAGE_NAME }}:$TAG_NAME
         sed -i "s|image: .*|image: $IMAGE_URI|" ./k8s-manifests/base/web-deployment.yaml
         cat ./k8s-manifests/base/web-deployment.yaml # For debugging purposes
       working-directory: ./k8s-manifests
