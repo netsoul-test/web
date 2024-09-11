@@ -33,22 +33,24 @@ jobs:
       run: |
         docker push 4e06a9e9-kr1-registry.container.nhncloud.com/ncr-for-web/nginx:latest
 
-    # Set up Kustomize
-    - name: Set up Kustomize
-      uses: kubernetes-sigs/setup-kustomize@v2
-      with:
-        version: 'latest'
+    # Install Kustomize
+    - name: Install Kustomize
+      run: |
+        curl -s "https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest" | grep "browser_download_url.*kustomize" | cut -d : -f 2,3 | tr -d \" | xargs curl -LO
+        chmod +x ./kustomize
+        mv ./kustomize /usr/local/bin/kustomize
 
     # Generate Kustomize manifests
     - name: Generate Kustomize manifests
       run: |
         kustomize build k8s-manifests/base > k8s-manifests/base/generated.yaml
 
-    # Set up ArgoCD CLI
-    - name: Set up ArgoCD CLI
-      uses: argoproj/argo-cd-action@v1
-      with:
-        version: 'latest'
+    # Install ArgoCD CLI
+    - name: Install ArgoCD CLI
+      run: |
+        curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+        chmod +x argocd-linux-amd64
+        mv argocd-linux-amd64 /usr/local/bin/argocd
 
     # Login to ArgoCD
     - name: ArgoCD Login
