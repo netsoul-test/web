@@ -66,7 +66,7 @@ jobs:
     # Login to ArgoCD
     - name: ArgoCD Login
       run: |
-        argocd login <ARGOCD_SERVER> --username ${{ secrets.ARGOCD_USERNAME }} --password ${{ secrets.ARGOCD_PASSWORD }}
+        argocd login ${{ secrets.ARGOCD_SERVER }} --username ${{ secrets.ARGOCD_USERNAME }} --password ${{ secrets.ARGOCD_PASSWORD }}
 
     # Sync application with ArgoCD
     - name: Sync Application with ArgoCD
