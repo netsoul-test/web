@@ -1,14 +1,17 @@
-name: Build and Push Nginx to NHN Cloud NCR
-
+name: Build, Push, and Deploy Nginx using ArgoCD
 on:
   push:
     branches:
       - main
+env:
+  DOCKER_REGISTRY: 4e06a9e9-kr1-registry.container.nhncloud.com
+  DOCKER_REPOSITORY: ncr-for-web
+  IMAGE_NAME: nginx
+  ARGOCD_APP_NAME: cicd-pipeline
 
 jobs:
-  build:
+  build-push-update:
     runs-on: ubuntu-latest
-
     steps:
     # GitHub repository checkout
     - name: Checkout code
@@ -21,14 +24,33 @@ jobs:
     # Login to NHN Cloud NCR
     - name: Login to NHN Cloud NCR
       run: |
-        echo "${{ secrets.NHN_NCR_PASSWORD }}" | docker login -u "${{ secrets.NHN_NCR_USERNAME }}" --password-stdin 4e06a9e9-kr1-registry.container.nhncloud.com/ncr-for-web
+        echo "${{ secrets.NHN_NCR_PASSWORD }}" | docker login -u "${{ secrets.NHN_NCR_USERNAME }}" --password-stdin ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}
 
-    # Build Nginx Docker image
-    - name: Build Nginx Docker Image
+    # Build and push Nginx Docker image
+    - name: Build and Push Nginx Docker Image
       run: |
-        docker build -t 4e06a9e9-kr1-registry.container.nhncloud.com/ncr-for-web/nginx:latest .
+        docker build -t ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} .
+        docker push ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
-    # Push Docker image to NHN Cloud NCR
-    - name: Push to NHN Cloud NCR
+    # Update Kubernetes manifest
+    - name: Update Kubernetes manifest
       run: |
-        docker push 4e06a9e9-kr1-registry.container.nhncloud.com/ncr-for-web/nginx:latest
+        sed -i 's|image: .*|image: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}|' k8s-manifests/base/web-deployment.yaml
+        
+    # Commit and push if there are changes
+    - name: Commit and push if changed
+      run: |
+        git config --global user.name 'GitHub Actions'
+        git config --global user.email 'github-actions@github.com'
+        git add -A
+        git commit -m "Update image to ${{ github.sha }}" || exit 0
+        git push
+
+    # Trigger ArgoCD sync
+    - name: Trigger ArgoCD sync
+      run: |
+        curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+        chmod +x argocd-linux-amd64
+        ./argocd-linux-amd64 login ${{ secrets.ARGOCD_SERVER }} --username ${{ secrets.ARGOCD_USERNAME }} --password ${{ secrets.ARGOCD_PASSWORD }} --insecure
+        ./argocd-linux-amd64 app sync ${{ env.ARGOCD_APP_NAME }} --prune
+        rm argocd-linux-amd64
