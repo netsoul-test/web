@@ -7,19 +7,20 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-    # GitHub repository checkout
+    # 레포지토리 체크아웃
     - name: Checkout code
       uses: actions/checkout@v3
       
-    # Set up Docker
+    # 도커 설치
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
       
-    # Login to NHN Cloud NCR
+    # NCR에 로그인
     - name: Login to NHN Cloud NCR
       run: |
         echo "${{ secrets.NHN_NCR_PASSWORD }}" | docker login -u "${{ secrets.NHN_NCR_USERNAME }}" --password-stdin 4e06a9e9-kr1-registry.container.nhncloud.com
-        
+
+    # 이미지 태그 동적으로 생성. 20240911061127-b914cf9 과 같은 형식    
     - name: Generate Image Tag
       id: image-tag
       run: |
@@ -30,13 +31,13 @@ jobs:
         echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
         echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
       
-    # Push Docker image to NHN Cloud NCR with the generated tag
+    # 도커 이미지를 빌드 후 NCR에 푸시 
     - name: Build and Push Docker Image
       run: |
         docker build -f Dockerfile -t ${{ env.IMAGE_URI }} .
         docker push ${{ env.IMAGE_URI }}
-        
-    # Setup Kustomize
+
+    # Kustomize 설치
     - name: Setup Kustomize
       uses: imranismail/setup-kustomize@v1
     - name: Checkout kustomize repository
@@ -46,14 +47,15 @@ jobs:
         ref: main
         token: ${{ secrets.ACTION_TOKEN }}
         path: k8s-manifests
-      
+
+    # GitHub Actions 이 푸시한걸로 남기기 위함   
     - name: Setup Git identity
       run: |
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
       working-directory: ${{ github.workspace }}/k8s-manifests
       
-    # Update Image Tag in Kustomize
+    # 이미지 URI를 변경
     - name: Update web-deployment.yaml with new image URI and tag
       run: |
         sed -i "s|image: .*|image: $IMAGE_URI|" ./base/web-deployment.yaml
@@ -62,8 +64,8 @@ jobs:
       env:
         IMAGE_URI: ${{ env.IMAGE_URI }}
 
-    # Commit and push 
-    - name: Commit and push the updated board-deployment.yaml
+    # 변경된 web-deployment.yaml 를 커밋 후 푸시
+    - name: Commit and push the updated web-deployment.yaml
       run: |
         git add base/web-deployment.yaml
         git commit -m "Update image URI for websoul-test to $IMAGE_URI"
@@ -72,19 +74,19 @@ jobs:
       env:
         IMAGE_URI: ${{ env.IMAGE_URI }}
         
-    # Install ArgoCD CLI
+    # ArgoCD CLI 설치 - argocd 명령어를 사용하기 위함
     - name: Install ArgoCD CLI
       run: |
         curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
         chmod +x argocd-linux-amd64
         mv argocd-linux-amd64 /usr/local/bin/argocd
         
-    # Login to ArgoCD
+    # ArgoCD에 로그인하기
     - name: ArgoCD Login
       run: |
         argocd login ${{ secrets.ARGOCD_SERVER }} --username ${{ secrets.ARGOCD_USERNAME }} --password ${{ secrets.ARGOCD_PASSWORD }} --insecure
         
-    # Sync application with ArgoCD
+    # 자동 동기화
     - name: Sync Application with ArgoCD
       run: |
         argocd app sync cicd-pipeline --prune
