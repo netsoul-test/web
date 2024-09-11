@@ -26,8 +26,9 @@ jobs:
         TIMESTAMP=$(date +%Y%m%d%H%M%S)
         SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
         IMAGE_TAG="${TIMESTAMP}-${SHORT_SHA}"
+        IMAGE_URI=4e06a9e9-kr1-registry.container.nhncloud.com/ncr-for-web/nginx:${IMAGE_TAG}
         echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
-        echo "IMAGE_URI=4e06a9e9-kr1-registry.container.nhncloud.com/ncr-for-web/nginx:${IMAGE_TAG}" >> $GITHUB_ENV
+        echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
       
     # Push Docker image to NHN Cloud NCR with the generated tag
     - name: Build and Push Docker Image
