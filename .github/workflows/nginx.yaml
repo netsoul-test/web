@@ -65,6 +65,11 @@ jobs:
       run: |
         kustomize build k8s-manifests/base > k8s-manifests/base/generated.yaml
 
+    # Update image tag in Kustomize manifests
+    - name: Update Image Tag in Kustomize
+      run: |
+        sed -i "s|image:.*|image: 4e06a9e9-kr1-registry.container.nhncloud.com/ncr-for-web/${{ env.IMAGE_TAG }}|" k8s-manifests/base/generated.yaml
+
     # Install ArgoCD CLI
     - name: Install ArgoCD CLI
       run: |
@@ -77,8 +82,7 @@ jobs:
       run: |
         argocd login ${{ secrets.ARGOCD_SERVER }} --username ${{ secrets.ARGOCD_USERNAME }} --password ${{ secrets.ARGOCD_PASSWORD }} --insecure
 
-    # Sync application with ArgoCD using the generated image tag
+    # Sync application with ArgoCD
     - name: Sync Application with ArgoCD
       run: |
-        argocd app set cicd-pipeline --image 4e06a9e9-kr1-registry.container.nhncloud.com/ncr-for-web/${{ env.IMAGE_TAG }}
         argocd app sync cicd-pipeline --prune
