@@ -69,6 +69,7 @@ jobs:
         argocd login ${{ secrets.ARGOCD_SERVER }} --username ${{ secrets.ARGOCD_USERNAME }} --password ${{ secrets.ARGOCD_PASSWORD }} --insecure
 
     # Sync application with ArgoCD
+    # --prune options means delete unused resources automatically
     - name: Sync Application with ArgoCD
       run: |
-        argocd app sync cicd-pipeline --retry
+        argocd app sync cicd-pipeline --prune
