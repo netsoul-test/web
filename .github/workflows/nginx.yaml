@@ -53,15 +53,24 @@ jobs:
         git config user.email "actions@github.com"
       working-directory: ${{ github.workspace }}/k8s-manifests
       
-    # Generate Kustomize manifests
-    - name: Generate Kustomize manifests
+    # Update Image Tag in Kustomize
+    - name: Update web-deployment.yaml with new image URI and tag
       run: |
-        kustomize build k8s-manifests/base > k8s-manifests/base/generated.yaml
-        
-    # Update image tag in Kustomize manifests
-    - name: Update Image Tag in Kustomize
+        sed -i "s|image: .*|image: $IMAGE_URI|" ./base/web-deployment.yaml
+        cat ./base/web-deployment.yaml # For debugging purposes
+      working-directory: ${{ github.workspace }}/k8s-manifests
+      env:
+        IMAGE_URI: ${{ env.IMAGE_URI }}
+
+    # Commit and push 
+    - name: Commit and push the updated board-deployment.yaml
       run: |
-        sed -i "s|image:.*|image: ${{ env.IMAGE_URI }}|" k8s-manifests/base/generated.yaml
+        git add base/web-deployment.yaml
+        git commit -m "Update image URI for websoul-test to $IMAGE_URI"
+        git push
+      working-directory: ${{ github.workspace }}/k8s-manifests
+      env:
+        IMAGE_URI: ${{ env.IMAGE_URI }}
         
     # Install ArgoCD CLI
     - name: Install ArgoCD CLI
