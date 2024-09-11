@@ -35,12 +35,12 @@ jobs:
     # Build Nginx Docker image with the generated tag
     - name: Build Nginx Docker Image
       run: |
-        docker build -f Dockerfile -t 4e06a9e9-kr1-registry.container.nhncloud.com/ncr-for-web/nginx:${{ env.IMAGE_TAG }} .
+        docker build -f Dockerfile -t 4e06a9e9-kr1-registry.container.nhncloud.com/ncr-for-web/${{ env.IMAGE_TAG }} .
 
     # Push Docker image to NHN Cloud NCR with the generated tag
     - name: Push to NHN Cloud NCR
       run: |
-        docker push 4e06a9e9-kr1-registry.container.nhncloud.com/ncr-for-web/nginx:${{ env.IMAGE_TAG }}
+        docker push 4e06a9e9-kr1-registry.container.nhncloud.com/ncr-for-web/${{ env.IMAGE_TAG }}
 
     # Setup Kustomize
     - name: Setup Kustomize
