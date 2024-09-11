@@ -35,7 +35,7 @@ jobs:
     # Update Kubernetes manifest
     - name: Update Kubernetes manifest
       run: |
-        sed -i 's|image: .*|image: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}|' k8s-manifests/base/web-deployment.yaml
+        sed -i 's|image: .*|image: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}|' ../k8s-manifests/base/web-deployment.yaml
         
     # Commit and push if there are changes
     - name: Commit and push if changed
