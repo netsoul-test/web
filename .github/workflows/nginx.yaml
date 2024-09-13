@@ -88,3 +88,4 @@ jobs:
     - name: Sync Application with ArgoCD
       run: |
         argocd app sync web-cicd --prune
+        echo "Success!"
