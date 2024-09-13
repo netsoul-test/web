@@ -87,4 +87,4 @@ jobs:
     # 자동 동기화
     - name: Sync Application with ArgoCD
       run: |
-        argocd app sync cicd-pipeline --prune
+        argocd app sync web-cicd --prune
