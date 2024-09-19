@@ -89,3 +89,4 @@ jobs:
       run: |
         argocd app sync web-cicd --prune
         echo "Success!"
+    # 변경점 만들기
